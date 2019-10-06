@@ -121,6 +121,9 @@ allocproc(void)
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+#ifdef CS333_P1
+  p->start_ticks = ticks;
+#endif ///CS333_P1
   return p;
 }
 
@@ -519,6 +522,23 @@ kill(int pid)
   return -1;
 }
 
+#ifdef CS333_P1
+void
+procdumpP1(struct proc *p, char *state)
+{
+  uint seconds = (ticks - p->start_ticks) / 1000;
+  uint milliseconds = (ticks - p->start_ticks) % 1000;
+	
+  if(milliseconds < 10) {
+    cprintf("%d\t%s\t\t%d.00%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else if(milliseconds < 100) {
+    cprintf("%d\t%s\t\t%d.0%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else {
+    cprintf("%d\t%s\t\t%d.%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  }
+}
+#endif // CS333_P1
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
@@ -558,8 +578,8 @@ procdump(void)
     procdumpP3(p, state);
 #elif defined(CS333_P2)
     procdumpP2(p, state);
-//#elif defined(CS333_P1)
-//    procdumpP1(p, state);
+#elif defined(CS333_P1)
+    procdumpP1(p, state);
 #else
     cprintf("%d\t%s\t%s\t", p->pid, p->name, state);
 #endif

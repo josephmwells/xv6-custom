@@ -108,7 +108,7 @@ sys_date(void)
     return -1;
 
   cmostime(d);
+  
   return 0;
-  // TODO add error check for return
 }
 #endif // CS333_P1
