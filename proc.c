@@ -523,7 +523,7 @@ kill(int pid)
 }
 
 #ifdef CS333_P1
-void
+static void
 procdumpP1(struct proc *p, char *state)
 {
   uint seconds = (ticks - p->start_ticks) / 1000;

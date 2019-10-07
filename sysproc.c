@@ -107,8 +107,9 @@ sys_date(void)
   if(argptr(0, (void*)&d, sizeof(struct rtcdate)) < 0)
     return -1;
 
-  cmostime(d);
-  
+  cmostime(d); 
+  if(d->year == 0 && d->month == 0 && d->day == 0 && d->hour == 0 && d->minute == 0 && d->second == 0) 
+    return -1;
   return 0;
 }
 #endif // CS333_P1
