@@ -123,7 +123,13 @@ allocproc(void)
 
 #ifdef CS333_P1
   p->start_ticks = ticks;
-#endif ///CS333_P1
+#endif //CS333_P1
+  
+#ifdef CS333_P2
+  p->cpu_ticks_total = 0;
+  p->cpu_ticks_in = 0;
+#endif // CS333_P2
+
   return p;
 }
 
@@ -153,6 +159,11 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
+
+  #ifdef CS333_P2
+  p->uid = INIT_UID;
+  p->gid = INIT_GID;
+  #endif // CS333_P1
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -210,6 +221,10 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+#ifdef CS333_P2
+  np->uid = curproc->uid;
+  np->gid = curproc->gid;
+#endif // CS333_P2
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -364,6 +379,11 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+
+#ifdef CS333_P2
+      p->cpu_ticks_in = ticks;
+#endif /// CS333_P2
+
       swtch(&(c->scheduler), p->context);
       switchkvm();
 
@@ -405,6 +425,7 @@ sched(void)
     panic("sched interruptible");
   intena = mycpu()->intena;
   swtch(&p->context, mycpu()->scheduler);
+  p->cpu_ticks_total += ticks - p->cpu_ticks_in;
   mycpu()->intena = intena;
 }
 
@@ -521,7 +542,7 @@ kill(int pid)
   release(&ptable.lock);
   return -1;
 }
-
+/*
 #ifdef CS333_P1
 static void
 procdumpP1(struct proc *p, char *state)
@@ -538,6 +559,24 @@ procdumpP1(struct proc *p, char *state)
   }
 }
 #endif // CS333_P1
+*/
+#ifdef CS333_P2
+static void
+procdumpP2(struct proc *p, char *state)
+{
+  uint seconds = (ticks - p->start_ticks) / 1000;
+  uint milliseconds = (ticks - p->start_ticks) % 1000;
+	
+  if(milliseconds < 10) {
+    cprintf("%d\t%s\t\t%d.00%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else if(milliseconds < 100) {
+    cprintf("%d\t%s\t\t%d.0%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else {
+    cprintf("%d\t%s\t\t%d.%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  }
+}
+#endif // CS333_P2
+
 
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.

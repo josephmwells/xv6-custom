@@ -113,3 +113,70 @@ sys_date(void)
   return 0;
 }
 #endif // CS333_P1
+
+#ifdef CS333_P2
+int
+sys_getuid(void)
+{
+  struct proc *curproc = myproc();
+  
+  return curproc->uid;  
+}
+
+int
+sys_getgid(void)
+{
+  struct proc *curproc = myproc();
+
+  return curproc->gid;
+}
+
+int
+sys_getppid(void)
+{
+  struct proc *curproc = myproc();
+
+  if(!curproc->parent)
+    return curproc->pid;
+
+  return curproc->parent->pid;
+}
+
+int
+sys_setuid(void)
+{
+  int uid;
+  struct proc *curproc = myproc();
+
+  if(argint(0, &uid) < 0)
+    return -1;
+
+  if(uid < 0 || uid > 32767)
+    return -1;
+
+  curproc->uid = uid;
+  return 0;	
+}
+
+int
+sys_setgid(void)
+{
+  int gid;
+  struct proc *curproc = myproc();
+
+  if(argint(0, &gid) < 0)
+    return -1;
+  
+  if(gid < 0 || gid > 32767)
+    return -1;
+
+  curproc->gid = gid;
+  return 0;	
+}
+
+int
+sys_getprocs(void)
+{
+	return 0;
+}
+#endif // CS333_P2

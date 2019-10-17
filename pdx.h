@@ -11,6 +11,9 @@
 #define RETURN_SUCCESS 0
 #define RETURN_FAILURE -1
 
+#define INIT_UID 0
+#define INIT_GID 0
+
 #define NUL 0
 #ifndef NULL
 #define NULL NUL
