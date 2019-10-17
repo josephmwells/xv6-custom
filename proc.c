@@ -5,6 +5,9 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#ifdef CS333_P2
+#include "uproc.h"
+#endif // CS333_P2
 #include "spinlock.h"
 
 static char *states[] = {
@@ -542,6 +545,43 @@ kill(int pid)
   release(&ptable.lock);
   return -1;
 }
+
+#ifdef CS333_P2
+int
+getprocs(uint max, struct uproc* table)
+{
+  acquire(&ptable.lock);
+
+  struct proc *p;
+  int found = 0;
+  
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(found > max)
+      break;
+
+    if(p->state != UNUSED &&  p->state != EMBRYO) {
+      table->pid = p->pid;
+      table->uid = p->uid;
+      table->gid = p->gid;
+      table->ppid = p->parent->pid;
+      table->elapsed_ticks = ticks - p->start_ticks;
+      table->CPU_total_ticks = p->cpu_ticks_total;
+      table->size = p->sz;
+      
+      strncpy(table->state, states[p->state], sizeof(char*)*STRMAX);
+      strncpy(table->name, p->name, sizeof(char*)*STRMAX);
+
+      table++;
+      found++;
+    }
+  }
+
+  release(&ptable.lock);
+
+  return found;
+}
+#endif // CS333_P2
+
 /*
 #ifdef CS333_P1
 static void
