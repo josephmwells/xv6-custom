@@ -553,25 +553,26 @@ getprocs(uint max, struct uproc* table)
   acquire(&ptable.lock);
 
   struct proc *p;
+  struct uproc* table_inc = table;
   int found = 0;
   
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if(found > max)
+    if(found == max)
       break;
 
     if(p->state != UNUSED &&  p->state != EMBRYO) {
-      table->pid = p->pid;
-      table->uid = p->uid;
-      table->gid = p->gid;
-      table->ppid = p->parent->pid;
-      table->elapsed_ticks = ticks - p->start_ticks;
-      table->CPU_total_ticks = p->cpu_ticks_total;
-      table->size = p->sz;
+      table_inc->pid = p->pid;
+      table_inc->uid = p->uid;
+      table_inc->gid = p->gid;
+      table_inc->ppid = (!p->parent) ? p->pid : p->parent->pid;
+      table_inc->elapsed_ticks = ticks - p->start_ticks;
+      table_inc->CPU_total_ticks = p->cpu_ticks_total;
+      table_inc->size = p->sz;
       
-      strncpy(table->state, states[p->state], sizeof(char*)*STRMAX);
-      strncpy(table->name, p->name, sizeof(char*)*STRMAX);
+      strncpy(table_inc->state, states[p->state], sizeof(char)*STRMAX);
+      strncpy(table_inc->name, p->name, sizeof(char)*STRMAX);
 
-      table++;
+      table_inc++;
       found++;
     }
   }
@@ -604,16 +605,36 @@ procdumpP1(struct proc *p, char *state)
 static void
 procdumpP2(struct proc *p, char *state)
 {
-  uint seconds = (ticks - p->start_ticks) / 1000;
-  uint milliseconds = (ticks - p->start_ticks) % 1000;
-	
-  if(milliseconds < 10) {
-    cprintf("%d\t%s\t\t%d.00%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
-  } else if(milliseconds < 100) {
-    cprintf("%d\t%s\t\t%d.0%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  int elapsed_ticks_seconds = (ticks - p->start_ticks) / 1000;
+  int elapsed_ticks_ms = (ticks - p->start_ticks) % 1000;
+  int CPU_total_ticks_seconds = p->cpu_ticks_total / 1000;
+  int CPU_total_ticks_ms = p->cpu_ticks_total % 1000;
+  cprintf("%d\t%s\t\t%d\t%d\t", 
+            p->pid,
+            p->name,
+            p->uid,
+            p->gid);
+  //(!p->parent) ? cprintf("%d\t", p->pid) : cprintf("%d\t", p->parent->pid);
+  cprintf("%d\t", (!p->parent) ? p->pid : p->parent->pid);
+
+  if(elapsed_ticks_ms < 10) {
+    cprintf("%d.00%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
+  } else if(elapsed_ticks_ms < 100) {
+    cprintf("%d.0%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
   } else {
-    cprintf("%d\t%s\t\t%d.%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+    cprintf("%d.%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
   }
+
+  if(CPU_total_ticks_ms < 10) {
+    cprintf("%d.00%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  } else if(CPU_total_ticks_ms < 100) {
+    cprintf("%d.0%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  } else {
+    cprintf("%d.%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  }   
+
+  cprintf("%s\t%d\t", states[p->state], (int)p->sz);   
+
 }
 #endif // CS333_P2
 
@@ -636,7 +657,7 @@ procdump(void)
 #elif defined(CS333_P3)
 #define HEADER "\nPID\tName         UID\tGID\tPPID\tElapsed\tCPU\tState\tSize\t PCs\n"
 #elif defined(CS333_P2)
-#define HEADER "\nPID\tName         UID\tGID\tPPID\tElapsed\tCPU\tState\tSize\t PCs\n"
+#define HEADER "\nPID\tName\t\tUID\tGID\tPPID\tElapsed\t\tCPU\tState\tSize\tPCs\n"
 #elif defined(CS333_P1)
 #define HEADER "\nPID\tName         Elapsed\tState\tSize\t PCs\n"
 #else

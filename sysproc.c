@@ -139,7 +139,7 @@ sys_getppid(void)
 {
   struct proc *curproc = myproc();
 
-  if(!curproc->parent)
+  if(curproc->parent == NULL)
     return curproc->pid;
 
   return curproc->parent->pid;
@@ -183,7 +183,7 @@ sys_getprocs(void)
   int max;
   struct uproc *table;
 
-  if(argint(0, &max) < 0 || argptr(0, (void*)&table, sizeof(struct uproc)) < 0)
+  if(argint(0, &max) < 0 || argptr(1, (void*)&table, sizeof(struct uproc)*max) < 0)
     return -1;
 
 	return getprocs(max, table);
