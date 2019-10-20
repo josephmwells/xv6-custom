@@ -121,35 +121,25 @@ sys_date(void)
 int
 sys_getuid(void)
 {
-  struct proc *curproc = myproc();
-  
-  return curproc->uid;  
+  return getuid();  
 }
 
 int
 sys_getgid(void)
 {
-  struct proc *curproc = myproc();
-
-  return curproc->gid;
+  return getgid();
 }
 
 int
 sys_getppid(void)
 {
-  struct proc *curproc = myproc();
-
-  if(curproc->parent == NULL)
-    return curproc->pid;
-
-  return curproc->parent->pid;
+  return getppid();
 }
 
 int
 sys_setuid(void)
 {
   int uid;
-  struct proc *curproc = myproc();
 
   if(argint(0, &uid) < 0)
     return -1;
@@ -157,15 +147,13 @@ sys_setuid(void)
   if(uid < 0 || uid > 32767)
     return -1;
 
-  curproc->uid = uid;
-  return 0;	
+  return setuid(uid);	
 }
 
 int
 sys_setgid(void)
 {
   int gid;
-  struct proc *curproc = myproc();
 
   if(argint(0, &gid) < 0)
     return -1;
@@ -173,8 +161,7 @@ sys_setgid(void)
   if(gid < 0 || gid > 32767)
     return -1;
 
-  curproc->gid = gid;
-  return 0;	
+  return setgid(gid);	
 }
 
 int

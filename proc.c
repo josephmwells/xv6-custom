@@ -550,6 +550,56 @@ kill(int pid)
 
 #ifdef CS333_P2
 int
+getuid(void)
+{
+  acquire(&ptable.lock);
+  struct proc *p = myproc();
+  int uid = p->uid;
+  release(&ptable.lock);
+  return uid;
+}
+
+int
+getgid(void)
+{
+  acquire(&ptable.lock);
+  struct proc *p = myproc();
+  int gid = p->gid;
+  release(&ptable.lock);
+  return gid;
+}
+
+int
+getppid(void)
+{ 
+  acquire(&ptable.lock);
+  struct proc *p = myproc();
+  int ppid = (!p->parent) ? p->pid : p->parent->pid;
+  release(&ptable.lock);
+  return ppid;
+}
+
+int
+setuid(int uid)
+{
+  acquire(&ptable.lock);
+  struct proc *p = myproc();
+  p->uid = uid;
+  release(&ptable.lock);
+  return 0;
+}
+
+int
+setgid(int gid)
+{
+  acquire(&ptable.lock);
+  struct proc *p = myproc();
+  p->gid = gid;
+  release(&ptable.lock);
+  return 0;
+}
+
+int
 getprocs(uint max, struct uproc* table)
 {
   acquire(&ptable.lock);
