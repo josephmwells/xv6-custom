@@ -99,3 +99,6 @@ testuidgid.c
 testuidgid.txt
 p2testsuite.c
 p4-test.c
+
+uproc.h
+p2-test.c
