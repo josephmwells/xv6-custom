@@ -426,7 +426,9 @@ sched(void)
     panic("sched running");
   if(readeflags()&FL_IF)
     panic("sched interruptible");
+#ifdef CS333_P2
   p->cpu_ticks_total += ticks - p->cpu_ticks_in;
+#endif // CS333_P2
   intena = mycpu()->intena;
   swtch(&p->context, mycpu()->scheduler);
   mycpu()->intena = intena;
