@@ -582,40 +582,25 @@ getprocs(uint max, struct uproc* table)
   return found;
 }
 #endif // CS333_P2
+//PAGEBREAK: 36
+// Print a process listing to console.  For debugging.
+// Runs when user types ^P on console.
+// No lock to avoid wedging a stuck machine further.
 
-/*
-#ifdef CS333_P1
-static void
-procdumpP1(struct proc *p, char *state)
-{
-  uint seconds = (ticks - p->start_ticks) / 1000;
-  uint milliseconds = (ticks - p->start_ticks) % 1000;
-	
-  if(milliseconds < 10) {
-    cprintf("%d\t%s\t\t%d.00%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
-  } else if(milliseconds < 100) {
-    cprintf("%d\t%s\t\t%d.0%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
-  } else {
-    cprintf("%d\t%s\t\t%d.%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
-  }
-}
-#endif // CS333_P1
-*/
-#ifdef CS333_P2
-static void
+#if defined(CS333_P2)
+void
 procdumpP2(struct proc *p, char *state)
 {
   int elapsed_ticks_seconds = (ticks - p->start_ticks) / 1000;
   int elapsed_ticks_ms = (ticks - p->start_ticks) % 1000;
   int CPU_total_ticks_seconds = p->cpu_ticks_total / 1000;
   int CPU_total_ticks_ms = p->cpu_ticks_total % 1000;
-  cprintf("%d\t%s\t\t%d\t%d\t", 
+  cprintf("%d\t%s\t\t%d\t%d\t%d\t", 
             p->pid,
             p->name,
             p->uid,
-            p->gid);
-  //(!p->parent) ? cprintf("%d\t", p->pid) : cprintf("%d\t", p->parent->pid);
-  cprintf("%d\t", (!p->parent) ? p->pid : p->parent->pid);
+            p->gid,
+            (!p->parent) ? p->pid : p->parent->pid);
 
   if(elapsed_ticks_ms < 10) {
     cprintf("%d.00%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
@@ -633,16 +618,25 @@ procdumpP2(struct proc *p, char *state)
     cprintf("%d.%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
   }   
 
-  cprintf("%s\t%d\t", states[p->state], (int)p->sz);   
+  cprintf("%s\t%d\t", state, (int)p->sz);   
 
 }
-#endif // CS333_P2
-
-
-//PAGEBREAK: 36
-// Print a process listing to console.  For debugging.
-// Runs when user types ^P on console.
-// No lock to avoid wedging a stuck machine further.
+#elif defined(CS333_P1)
+void
+procdumpP1(struct proc *p, char *state)
+{
+  uint seconds = (ticks - p->start_ticks) / 1000;
+  uint milliseconds = (ticks - p->start_ticks) % 1000;
+	
+  if(milliseconds < 10) {
+    cprintf("%d\t%s\t\t%d.00%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else if(milliseconds < 100) {
+    cprintf("%d\t%s\t\t%d.0%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  } else {
+    cprintf("%d\t%s\t\t%d.%d\t%s\t%d\t", p->pid, p->name, seconds, milliseconds, state, p->sz);
+  }
+}
+#endif // CS333_P1
 
 void
 procdump(void)
@@ -695,3 +689,4 @@ procdump(void)
   cprintf("$ ");  // simulate shell prompt
 #endif // CS333_P1
 }
+
