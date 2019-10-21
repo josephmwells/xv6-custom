@@ -621,8 +621,8 @@ getprocs(uint max, struct uproc* table)
       table_inc->CPU_total_ticks = p->cpu_ticks_total;
       table_inc->size = p->sz;
       
-      strncpy(table_inc->state, states[p->state], sizeof(char)*STRMAX);
-      strncpy(table_inc->name, p->name, sizeof(char)*STRMAX);
+      safestrcpy(table_inc->state, states[p->state], sizeof(char)*STRMAX);
+      safestrcpy(table_inc->name, p->name, sizeof(char)*STRMAX);
 
       table_inc++;
       found++;
