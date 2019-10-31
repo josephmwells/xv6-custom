@@ -11,8 +11,10 @@
 #define RETURN_SUCCESS 0
 #define RETURN_FAILURE -1
 
+#ifdef CS333_P2
 #define INIT_UID 0
 #define INIT_GID 0
+#endif // CS333_P2
 
 #define NUL 0
 #ifndef NULL
