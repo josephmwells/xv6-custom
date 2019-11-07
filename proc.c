@@ -323,6 +323,83 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
+#if defined (CS333_P3)
+void
+exit(void)
+{
+  struct proc *curproc = myproc();
+  struct proc *p;
+  int fd;
+
+  if(curproc == initproc)
+    panic("init exiting");
+
+  // Close all open files.
+  for(fd = 0; fd < NOFILE; fd++){
+    if(curproc->ofile[fd]){
+      fileclose(curproc->ofile[fd]);
+      curproc->ofile[fd] = 0;
+    }
+  }
+
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
+  curproc->cwd = 0;
+
+  acquire(&ptable.lock);
+
+  // Parent might be sleeping in wait().
+  wakeup1(curproc->parent);
+
+  // Pass abandoned children to init.
+  // Iterate through RUNNING list 
+  p = ptable.list[RUNNING].head;
+  while(p) {
+    if(p->parent == curproc)
+      p->parent = initproc;
+    p = p->next; 
+  }
+
+  // Iterate through RUNNABLE list 
+  p = ptable.list[RUNNABLE].head;
+  while(p) {
+    if(p->parent == curproc)
+      p->parent = initproc;
+    p = p->next; 
+  }
+
+  // Iterate through SLEEPING list 
+  p = ptable.list[SLEEPING].head;
+  while(p) {
+    if(p->parent == curproc)
+      p->parent = initproc;
+    p = p->next; 
+  }
+
+  // Iterate through ZOMBIE list 
+  p = ptable.list[ZOMBIE].head;
+  while(p) {
+    if(p->parent == curproc) {
+      p->parent = initproc;
+      if(p->state == ZOMBIE)
+        wakeup1(initproc);
+    }
+    p = p->next; 
+  }
+
+  // Jump into the scheduler, never to return.
+  stateListRemove(&ptable.list[RUNNING], curproc);
+  assertState(curproc, RUNNING, __FUNCTION__, __LINE__);
+  curproc->state = ZOMBIE;
+  stateListAdd(&ptable.list[curproc->state], curproc);
+#ifdef PDX_XV6
+  curproc->sz = 0;
+#endif // PDX_XV6
+  sched();
+  panic("zombie exit");
+}
+#else // CS333_P3
 void
 exit(void)
 {
@@ -368,6 +445,7 @@ exit(void)
   sched();
   panic("zombie exit");
 }
+#endif
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
