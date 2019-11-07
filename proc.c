@@ -19,10 +19,33 @@ static char *states[] = {
 [ZOMBIE]    "zombie"
 };
 
+#ifdef CS333_P3
+#define statecount NELEM(states)
+#endif // CS333_P3
+
+#ifdef CS333_P3
+struct ptrs {
+  struct proc* head;
+  struct proc* tail;
+};
+#endif //CS333_P3
+
 static struct {
   struct spinlock lock;
   struct proc proc[NPROC];
+#ifdef CS333_P3
+  struct ptrs list[statecount];
+#endif //CS333_P3
 } ptable;
+
+// list management function prototypes
+#ifdef CS333_P3
+static void initProcessLists(void);
+static void initFreeList(void);
+static void stateListAdd(struct ptrs*, struct proc*);
+static int  stateListRemove(struct ptrs*, struct proc* p);
+static void assertState(struct proc*, enum procstate, const char *, int);
+#endif
 
 static struct proc *initproc;
 
@@ -89,6 +112,14 @@ allocproc(void)
   char *sp;
 
   acquire(&ptable.lock);
+#ifdef CS333_P3
+  p = ptable.list[UNUSED].head;
+  stateListRemove(&ptable.list[UNUSED], p); 
+  assertState(p, UNUSED, __FUNCTION__, __LINE__);
+  p->state = EMBRYO;
+  p->pid = nextpid++;
+  stateListAdd(&ptable.list[p->state], p);
+#elif
   int found = 0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == UNUSED) {
@@ -101,6 +132,7 @@ allocproc(void)
   }
   p->state = EMBRYO;
   p->pid = nextpid++;
+#endif
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -144,6 +176,13 @@ userinit(void)
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
+#ifdef CS333_P3
+  acquire(&ptable.lock);
+  initProcessLists();
+  initFreeList();
+  release(&ptable.lock);
+#endif
+
   p = allocproc();
 
   initproc = p;
@@ -172,9 +211,18 @@ userinit(void)
   // run this process. the acquire forces the above
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
+#ifdef CS333_P3
+  acquire(&ptable.lock);
+  stateListRemove(&ptable.list[EMBRYO], p);
+  assertState(p, EMBRYO, __FUNCTION__, __LINE__);
+  p->state = RUNNABLE;
+  stateListAdd(&ptable.list[p->state], p);
+  release(&ptable.lock);
+#elif
   acquire(&ptable.lock);
   p->state = RUNNABLE;
   release(&ptable.lock);
+#endif // CS333_P3
 }
 
 // Grow current process's memory by n bytes.
@@ -634,12 +682,154 @@ getprocs(uint max, struct uproc* table)
   return found;
 }
 #endif // CS333_P2
+
+#ifdef CS333_P3
+// list management helper functions
+static void
+stateListAdd(struct ptrs* list, struct proc* p)
+{
+  if((*list).head == NULL){
+    (*list).head = p;
+    (*list).tail = p;
+    p->next = NULL;
+  } else{
+    ((*list).tail)->next = p;
+    (*list).tail = ((*list).tail)->next;
+    ((*list).tail)->next = NULL;
+  }
+}
+
+static int
+stateListRemove(struct ptrs* list, struct proc* p)
+{
+  if((*list).head == NULL || (*list).tail == NULL || p == NULL){
+    return -1;
+  }
+
+  struct proc* current = (*list).head;
+  struct proc* previous = 0;
+
+  if(current == p){
+    (*list).head = ((*list).head)->next;
+    // prevent tail remaining assigned when we've removed the only item
+    // on the list
+    if((*list).tail == p){
+      (*list).tail = NULL;
+    }
+    return 0;
+  }
+
+  while(current){
+    if(current == p){
+      break;
+    }
+
+    previous = current;
+    current = current->next;
+  }
+
+  // Process not found. return error
+  if(current == NULL){
+    return -1;
+  }
+
+  // Process found.
+  if(current == (*list).tail){
+    (*list).tail = previous;
+    ((*list).tail)->next = NULL;
+  } else{
+    previous->next = current->next;
+  }
+
+  // Make sure p->next doesn't point into the list.
+  p->next = NULL;
+
+  return 0;
+}
+
+static void
+initProcessLists()
+{
+  int i;
+
+  for (i = UNUSED; i <= ZOMBIE; i++) {
+    ptable.list[i].head = NULL;
+    ptable.list[i].tail = NULL;
+  }
+#ifdef CS333_P4
+  for (i = 0; i <= MAXPRIO; i++) {
+    ptable.ready[i].head = NULL;
+    ptable.ready[i].tail = NULL;
+  }
+#endif
+}
+
+static void
+initFreeList(void)
+{
+  struct proc* p;
+
+  for(p = ptable.proc; p < ptable.proc + NPROC; ++p){
+    p->state = UNUSED;
+    stateListAdd(&ptable.list[UNUSED], p);
+  }
+}
+
+// example usage:
+// assertState(p, UNUSED, __FUNCTION__, __LINE__);
+// This code uses gcc preprocessor directives. For details, see
+// https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html
+static void
+assertState(struct proc *p, enum procstate state, const char * func, int line)
+{
+    if (p->state == state)
+      return;
+    cprintf("Error: proc state is %s and should be %s.\nCalled from %s line %d\n",
+        states[p->state], states[state], func, line);
+    panic("Error: Process state incorrect in assertState()");
+}
+#endif // CS333_P3
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
 
-#if defined(CS333_P2)
+#if defined(CS333_P3)
+void
+procdumpP3(struct proc *p, char *state)
+{
+  int elapsed_ticks_seconds = (ticks - p->start_ticks) / 1000;
+  int elapsed_ticks_ms = (ticks - p->start_ticks) % 1000;
+  int CPU_total_ticks_seconds = p->cpu_ticks_total / 1000;
+  int CPU_total_ticks_ms = p->cpu_ticks_total % 1000;
+  cprintf("%d\t%s\t\t%d\t%d\t%d\t", 
+            p->pid,
+            p->name,
+            p->uid,
+            p->gid,
+            (!p->parent) ? p->pid : p->parent->pid);
+
+  if(elapsed_ticks_ms < 10) {
+    cprintf("%d.00%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
+  } else if(elapsed_ticks_ms < 100) {
+    cprintf("%d.0%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
+  } else {
+    cprintf("%d.%d\t\t", elapsed_ticks_seconds, elapsed_ticks_ms);
+  }
+
+  if(CPU_total_ticks_ms < 10) {
+    cprintf("%d.00%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  } else if(CPU_total_ticks_ms < 100) {
+    cprintf("%d.0%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  } else {
+    cprintf("%d.%d\t", CPU_total_ticks_seconds, CPU_total_ticks_ms);
+  }   
+
+  cprintf("%s\t%d\t", state, (int)p->sz);   
+
+}
+#elif defined(CS333_P2)
 void
 procdumpP2(struct proc *p, char *state)
 {
