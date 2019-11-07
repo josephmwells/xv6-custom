@@ -137,7 +137,14 @@ allocproc(void)
 
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
+#ifdef CS333_P3
+    stateListRemove(&ptable.list[EMBRYO], p);
+    assertState(p, EMBRYO, __FUNCTION__, __LINE__);
     p->state = UNUSED;
+    stateListAdd(&ptable.list[p->state], p);
+#elif
+    p->state = UNUSED;
+#endif
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
@@ -266,9 +273,19 @@ fork(void)
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
-    np->state = UNUSED;
+
+#ifdef CS333_P3
+  stateListRemove(&ptable.list[EMBRYO], np);
+  assertState(np, EMBRYO, __FUNCTION__, __LINE__);
+  np->state = UNUSED;
+  stateListAdd(&ptable.list[np->state], np); 
+#else
+  np->state = UNUSED;
+#endif
+
     return -1;
   }
+
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
@@ -290,7 +307,14 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
+#ifdef CS333_P3
+  stateListRemove(&ptable.list[EMBRYO], np);
+  assertState(np, EMBRYO, __FUNCTION__, __LINE__);
   np->state = RUNNABLE;
+  stateListAdd(&ptable.list[np->state], np); 
+#else
+  np->state = RUNNABLE;
+#endif
   release(&ptable.lock);
 
   return pid;
