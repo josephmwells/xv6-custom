@@ -202,6 +202,9 @@ void
 consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
+#ifdef CS333_P3
+  int dofreedump = 0, doreadydump = 0, dosleepdump = 0, dozombiedump = 0;
+#endif
 #ifdef PDX_XV6
   int shutdown = FALSE;
 #endif // PDX_XV6
@@ -225,12 +228,27 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
+#ifdef CS333_P3
+    case C('F'): // List # of Free Processes
+      dofreedump = 1;
+      break;
+    case C('R'): // List PID of Ready Processes
+      doreadydump = 1;
+      break;
+    case C('S'): // List PID of Sleep Processes
+      dosleepdump = 1;
+      break;
+    case C('Z'): // List PID and PPID of Zombie Processes
+      dozombiedump = 1;
+      break;
+#endif // CS333_P3
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
         input.e--;
         consputc(BACKSPACE);
       }
       break;
+
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
@@ -252,6 +270,12 @@ consoleintr(int (*getc)(void))
   if(doprocdump) {
     procdump();  // now call procdump() wo. cons.lock held
   }
+#ifdef CS333_P3
+  if(dofreedump) freedump();
+  if(doreadydump) readydump();
+  if(dosleepdump) sleepdump();
+  if(dozombiedump) zombiedump();
+#endif
 }
 
 int

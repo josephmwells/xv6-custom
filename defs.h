@@ -135,6 +135,12 @@ int             getppid(void);
 int             setuid(int);
 int             setgid(int);
 #endif // CS333_P2
+#ifdef CS333_P3
+void            freedump(void);
+void            readydump(void);
+void            sleepdump(void);
+void            zombiedump(void);
+#endif // CS333_P3
 
 // swtch.S
 void            swtch(struct context**, struct context*);
