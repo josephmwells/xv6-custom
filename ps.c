@@ -24,7 +24,11 @@ main(int argc, char *argv[])
 
   if(found != 0) 
   {
+#ifdef CS333_P4
+    printf(1, "PID\tName\t\tUID\tGID\tPPID\tPrio\tElapsed\t\tCPU\tState\tSize\n");
+#else
     printf(1, "PID\tName\t\tUID\tGID\tPPID\tElapsed\t\tCPU\tState\tSize\n");
+#endif
   } else {
     printf(1, "No processes found");
     exit();
@@ -37,12 +41,22 @@ main(int argc, char *argv[])
     int elapsed_ticks_ms = table_inc->elapsed_ticks % 1000;
     int CPU_total_ticks_seconds = table_inc->CPU_total_ticks / 1000;
     int CPU_total_ticks_ms = table_inc->CPU_total_ticks % 1000;
-    printf(1, "%d\t%s\t\t%d\t%d\t%d\t", 
+#ifdef CS333_P4
+    printf(1, "%d\t%s\t\t%d\t%d\t%d\t%d\t", 
+              table_inc->pid,
+              table_inc->name,
+              table_inc->uid,
+              table_inc->gid,
+              table_inc->ppid,
+              table_inc->priority);
+#else
+    printf(1, "%d\t%s\t\t%d\t%d\t%d\t%d\t", 
               table_inc->pid,
               table_inc->name,
               table_inc->uid,
               table_inc->gid,
               table_inc->ppid);
+#endif
 
     if(elapsed_ticks_ms < 10)
     {
