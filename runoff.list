@@ -102,3 +102,6 @@ p4-test.c
 
 uproc.h
 p2-test.c
+p3-test.c
+sleeptest.c
+evanstest.c
