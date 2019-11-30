@@ -28,7 +28,7 @@ int halt(void);
 #ifdef CS333_P1
 int date(struct rtcdate*);
 #endif // CS333_P1
-#ifdef CS333_P1
+#ifdef CS333_P2
 uint getuid(void); // UID of the current process
 uint getgid(void); // GID of the current process
 uint getppid(void); // process ID of the parent process
@@ -38,6 +38,10 @@ int setgid(uint); // set GID
 
 int getprocs(uint max, struct uproc* table);
 #endif // CS333_P2
+#ifdef CS333_P4
+int setpriority(int, int);
+int getpriority(int);
+#endif
 
 // ulib.c
 int stat(char*, struct stat*);
