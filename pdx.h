@@ -16,6 +16,12 @@
 #define INIT_GID 0
 #endif // CS333_P2
 
+#ifdef CS333_P4
+#define MAXPRIO 5
+#define DEFAULT_BUDGET 5
+#define TICKS_TO_PROMOTE 5
+#endif
+
 #define NUL 0
 #ifndef NULL
 #define NULL NUL
