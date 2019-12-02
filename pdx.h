@@ -17,9 +17,9 @@
 #endif // CS333_P2
 
 #ifdef CS333_P4
-#define MAXPRIO 5
-#define DEFAULT_BUDGET 5
-#define TICKS_TO_PROMOTE 5
+#define MAXPRIO 6
+#define DEFAULT_BUDGET 300
+#define TICKS_TO_PROMOTE 3000
 #endif
 
 #define NUL 0

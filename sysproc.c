@@ -184,10 +184,10 @@ sys_setpriority(void)
   int pid;
   int priority;
   
-  if(argint(0, &pid) <0 || argint(1, &priority) < 0)
+  if(argint(0, &pid) < 0 || argint(1, &priority) < 0)
     return -1;
 
-  if(pid < 0 || pid > NPROC || priority < 0 || priority > MAXPRIO)
+  if(pid < 0 || priority < 0 || priority > MAXPRIO)
     return -1;
 
   return setpriority(pid, priority);
@@ -202,7 +202,7 @@ sys_getpriority(void)
   if(argint(0, &pid) < 0)
     return -1;
 
-  if(pid < 0 || pid > NPROC)
+  if(pid < 0)
     return -1;
 
   return getpriority(pid);
